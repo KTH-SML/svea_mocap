@@ -1,0 +1,11 @@
+<launch>
+
+    <arg name="mocap_name" default=""/>
+
+    <include file="$(find mocap_qualisys)/launch/qualisys.launch"/>
+
+    <node pkg="svea_mocap" type="mocap_only.py" name="mocap_only" output="screen">
+        <param name="mocap_name" value="$(arg mocap_name)"/>
+    </node>
+
+</launch>
