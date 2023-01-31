@@ -14,7 +14,7 @@ run SVEA software.
 Once you have set up your workspace based on [svea](https://github.com/KTH-SML/svea),
 in addition to cloning this package, you also need to clone the
 [motion\_capture\_system](https://github.com/KTH-SML/motion_capture_system) repository,
-which is the main driver for ROS-ifying data from the motion capture system.
+which is the driver for ROS-ifying data from the motion capture system.
 
 ## Usage
 
@@ -40,19 +40,25 @@ If no errors or warnings pop-up, you can then try calling `rostopic list`
 and you should see all of the subjects that are published by the mocap
 system.
 
-### Using mocap as localization for experiments
+### Example: mocap as localization
 
-To try out using mocap as localization, try running the following launch
-file with the <subject name> replaced:
+This is useful when running an experiment that requires perfect localization
+can be run within the confines of the motion capture area.
+
+To use mocap as localization, try running the following launch
+file with the `<subject name>` replaced:
 
 ```bash
 roslaunch svea_mocap mocap_only mocap_name:=<subject name>
 ```
 
-### Using mocap to evaluate new localization methods
+### Example: evaluating new localization approaches
 
-To try out comparing indoor localization with mocap, try running the following
-launch file with the <subject name> replaced:
+This is useful when new localization approaches need to be evaluated against
+the ground truth of the motion capture system.
+
+To compare indoor localization with mocap, try running the following
+launch file with the `<subject name>` replaced:
 
 ```bash
 roslaunch svea_mocap localization_comparison mocap_name:=<subject name>
