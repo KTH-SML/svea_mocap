@@ -7,6 +7,7 @@ Module containing localization interface for motion capture
 from __future__ import division
 from threading import Thread, Event
 import rospy
+from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 from svea.states import VehicleState
 
@@ -33,9 +34,12 @@ class MotionCaptureInterface(object):
 
     def __init__(self, mocap_name=''):
         self.model_name = mocap_name
-        self._mocap_topic = 'qualisys/' + self.model_name + '/odom'
-        self._mocap_sub = None
+        self._odom_topic = 'qualisys/' + self.model_name + '/odom'
+        self._vel_topic = 'qualisys/' + self.model_name + '/velocity'
+        self._odom_sub = None
+        self._vel_sub = None
 
+        self._curr_vel_twist = None
         self.state = VehicleState()
         self.last_time = float('nan')
 
@@ -48,12 +52,20 @@ class MotionCaptureInterface(object):
 
     def update_name(self, name):
         self.model_name = name
-        self._mocap_topic = 'qualisys/' + self.model_name + '/odom'
-        if not self._mocap_sub is None:
-            self._mocap_sub.unregister()
-        self._mocap_sub = rospy.Subscriber(self._mocap_topic,
+        self._odom_topic = 'qualisys/' + self.model_name + '/odom'
+        self._vel_topic = 'qualisys/' + self.model_name + '/velocity'
+        if not self._odom_sub is None:
+            self._odom_sub.unregister()
+        if not self._vel_sub is None:
+            self._vel_sub.unregister()
+        self._vel_sub = rospy.Subscriber(self._vel_topic,
+                                        TwistStamped,
+                                        self._read_vel_msg,
+                                        tcp_nodelay=True,
+                                        queue_size=1)
+        self._odom_sub = rospy.Subscriber(self._odom_topic,
                                         Odometry,
-                                        self._read_mocap_msg,
+                                        self._read_odom_msg,
                                         tcp_nodelay=True,
                                         queue_size=1)
 
@@ -93,20 +105,34 @@ class MotionCaptureInterface(object):
         rospy.spin()
 
     def _start_listen(self):
-        self._mocap_sub = rospy.Subscriber(self._mocap_topic,
+        self._odom_sub = rospy.Subscriber(self._odom_topic,
                                            Odometry,
-                                           self._read_mocap_msg,
+                                           self._read_odom_msg,
                                            tcp_nodelay=True,
                                            queue_size=1)
+        self._vel_sub = rospy.Subscriber(self._vel_topic,
+                                        TwistStamped,
+                                        self._read_vel_msg,
+                                        tcp_nodelay=True,
+                                        queue_size=1)
 
-    def _read_mocap_msg(self, msg):
-        self.state.odometry_msg = msg
-        self.last_time = rospy.get_time()
-        self._ready_event.set()
-        self._ready_event.clear()
+    def fix_twist(self, odom_msg):
+        odom_msg.twist.twist = self._curr_vel_twist
+        return odom_msg
 
-        for cb in self.callbacks:
-            cb(self.state)
+    def _read_odom_msg(self, msg):
+        if not self._curr_vel_twist is None:
+            msg = self.fix_twist(msg)
+            self.state.odometry_msg = msg
+            self.last_time = rospy.get_time()
+            self._ready_event.set()
+            self._ready_event.clear()
+
+            for cb in self.callbacks:
+                cb(self.state)
+
+    def _read_vel_msg(self, msg):
+        self._curr_vel_twist = msg.twist
 
     def add_callback(self, cb):
         """Add state callback. Every function passed into this method
