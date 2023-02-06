@@ -34,14 +34,15 @@ class MotionCaptureInterface(object):
 
     def __init__(self, mocap_name=''):
         self.model_name = mocap_name
-        self._odom_topic = 'qualisys/' + self.model_name + '/odom'
-        self._vel_topic = 'qualisys/' + self.model_name + '/velocity'
         self._odom_sub = None
         self._vel_sub = None
 
         self._curr_vel_twist = None
         self.state = VehicleState()
         self.last_time = float('nan')
+
+        self._x_offset = 0.0 # [m]
+        self._y_offset = 0.0
 
         self.is_ready = False
         self._ready_event = Event()
@@ -54,20 +55,16 @@ class MotionCaptureInterface(object):
         self.model_name = name
         self._odom_topic = 'qualisys/' + self.model_name + '/odom'
         self._vel_topic = 'qualisys/' + self.model_name + '/velocity'
+        # check if old subs need to be removed
         if not self._odom_sub is None:
             self._odom_sub.unregister()
         if not self._vel_sub is None:
             self._vel_sub.unregister()
-        self._vel_sub = rospy.Subscriber(self._vel_topic,
-                                        TwistStamped,
-                                        self._read_vel_msg,
-                                        tcp_nodelay=True,
-                                        queue_size=1)
-        self._odom_sub = rospy.Subscriber(self._odom_topic,
-                                        Odometry,
-                                        self._read_odom_msg,
-                                        tcp_nodelay=True,
-                                        queue_size=1)
+        self._start_listen()
+
+    def set_model_offset(self, x, y):
+        self._x_offset = x
+        self._y_offset = y
 
     def start(self):
         """Spins up ROS background thread; must be called to start
@@ -93,7 +90,7 @@ class MotionCaptureInterface(object):
         rospy.loginfo("Starting Motion Capture Interface Node for "
                       + self.model_name)
         self.node_name = 'motion_capture_node'
-        self._start_listen()
+        self.update_name(self.model_name)
         self.is_ready = self._wait_until_ready()
         if not self.is_ready:
             rospy.logwarn("Motion Capture not responding during start of "
@@ -124,6 +121,9 @@ class MotionCaptureInterface(object):
         if not self._curr_vel_twist is None:
             msg = self.fix_twist(msg)
             self.state.odometry_msg = msg
+            # apply model offsets (if any)
+            self.state.x += self._x_offset
+            self.state.y += self._y_offset
             self.last_time = rospy.get_time()
             self._ready_event.set()
             self._ready_event.clear()
