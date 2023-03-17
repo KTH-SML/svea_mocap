@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="map" value="sml"/>
+
+    <!--
+        This transform was measured for the `svea_core/maps/sml` map in March 2023.
+        If you use any other map (or SLAM'd a new map for SML) then you cannot use
+        this correction.
+
+        Read more about static_transform_publisher:
+            http://wiki.ros.org/tf#static_transform_publisher
+    -->
+    <node
+        if="$(eval map == 'sml')"
+        name="map_correction" pkg="tf" type="static_transform_publisher"
+        args="<x> <y> <z> <yaw> <pitch> <roll> <frame_id> <child_frame> 100" />
+
+</launch>
