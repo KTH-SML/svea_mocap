@@ -1,8 +1,19 @@
 <launch>
     <!--name of mocap model -->
     <arg name="mocap_name"/>
+    <arg name="verbose" default="False"/>
     <!--options: indoor-->
     <arg name="localization_method" default="indoor"/>
+    <arg name="map" default="sml"/>
+    <arg name="mocap_name" default="svea7"/>
+    <arg name="x" default="0.06"/>
+    <arg name="y" default="-0.06"/>
+    <arg name="z" default="0.0"/>
+    <arg name="roll" default="0.0"/>
+    <arg name="pitch" default="0.0"/>
+    <arg name="yaw" default="1.57"/>
+    <arg name="frame_id" default="mocap"/>
+    <arg name="child_frame" default="map"/>
 
     <include file="$(find mocap_qualisys)/launch/qualisys.launch"/>
 
@@ -19,5 +30,17 @@
 
     <node pkg="svea_mocap" type="localization_comparison.py" name="localization_comparison" output="screen">
         <param name="mocap_name" value="$(arg mocap_name)"/>
+        <param name="verbose" value="$(arg verbose)"/>
+    </node>
+
+    <node if="$(eval map == 'sml')" name="tf_mocap_to_map" pkg="svea_mocap" type="tf_mocap_to_map.py" output="screen">
+        <param name="x" value="$(arg x)"/>
+        <param name="y" value="$(arg y)"/>
+        <param name="z" value="$(arg z)"/>
+        <param name="yaw" value="$(arg yaw)"/>
+        <param name="roll" value="$(arg roll)"/>
+        <param name="pitch" value="$(arg pitch)"/>
+        <param name="frame_id" value="$(arg frame_id)"/>
+        <param name="child_frame" value="$(arg child_frame)"/>
     </node>
 </launch>
