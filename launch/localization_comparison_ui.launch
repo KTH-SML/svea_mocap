@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="mocap_name"/>
 
     <include file="$(find svea_mocap)/launch/localization_comparison.launch">
-        <arg name="mocap_name" value="svea7"/>
+        <arg name="mocap_name" value="$(arg mocap_name)"/>
     </include>
     
     <arg name="localization_topic" default="/state"/>
