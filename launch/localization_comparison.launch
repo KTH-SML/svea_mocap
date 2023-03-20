@@ -5,7 +5,6 @@
     <!--options: indoor-->
     <arg name="localization_method" default="indoor"/>
     <arg name="map" default="sml"/>
-    <arg name="mocap_name" default="svea7"/>
     <arg name="x" default="0.06"/>
     <arg name="y" default="-0.06"/>
     <arg name="z" default="0.0"/>
@@ -33,14 +32,15 @@
         <param name="verbose" value="$(arg verbose)"/>
     </node>
 
-    <node if="$(eval map == 'sml')" name="tf_mocap_to_map" pkg="svea_mocap" type="tf_mocap_to_map.py" output="screen">
-        <param name="x" value="$(arg x)"/>
-        <param name="y" value="$(arg y)"/>
-        <param name="z" value="$(arg z)"/>
-        <param name="yaw" value="$(arg yaw)"/>
-        <param name="roll" value="$(arg roll)"/>
-        <param name="pitch" value="$(arg pitch)"/>
-        <param name="frame_id" value="$(arg frame_id)"/>
-        <param name="child_frame" value="$(arg child_frame)"/>
-    </node>
+    <include file="$(find svea_mocap)/launch/map_correction.launch">
+        <arg name="x" value="$(arg x)"/>
+        <arg name="y" value="$(arg y)"/>
+        <arg name="z" value="$(arg z)"/>
+        <arg name="yaw" value="$(arg yaw)"/>
+        <arg name="roll" value="$(arg roll)"/>
+        <arg name="pitch" value="$(arg pitch)"/>
+        <arg name="frame_id" value="$(arg frame_id)"/>
+        <arg name="child_frame" value="$(arg child_frame)"/>
+    </include>
+    
 </launch>
