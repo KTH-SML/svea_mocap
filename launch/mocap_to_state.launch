@@ -9,7 +9,7 @@
     </node>
 
     <!-- Adapter node from mocap Pose to VehicleState -->
-    <node name="adapter_pose_to_vehicle_state" pkg="svea_examples" type="adapter_pose_to_vehicle_state.py"
+    <node name="adapter_pose_to_vehicle_state" pkg="svea_mocap" type="adapter_pose_to_vehicle_state.py"
     output="screen">
         <param name="input_topic" value="$(arg input_topic)"/>
         <param name="output_topic" value="$(arg output_topic)"/>
