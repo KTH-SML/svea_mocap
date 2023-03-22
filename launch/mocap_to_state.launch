@@ -1,12 +1,31 @@
 <launch>
 
     <arg name="mocap_name"/>
+    <arg name="input_topic" default="/qualisys/svea7/pose"/>
+    <arg name="output_topic" default="/state"/>
+    <arg name="velocity_topic" default="/qualisys/svea7/velocity"/>
+    <arg name="state_verbose" default="false"/>
+    <arg name="map" default="sml_planner"/>
+    <arg name="x" default="0.06-5.559765"/> <!-- x offset: Mocap in the middle of the map -->
+    <arg name="y" default="-0.06-5.930124"/> <!-- y offset: Mocap in the middle of the map -->
+    <arg name="z" default="0.0"/>
+    <arg name="roll" default="0.0"/>
+    <arg name="pitch" default="0.0"/>
+    <arg name="yaw" default="1.57"/>
+    <arg name="frame_id" default="mocap"/>
+    <arg name="child_frame" default="map"/>
 
-    <include file="$(find mocap_qualisys)/launch/qualisys.launch"/>
-
-    <node pkg="svea_mocap" type="mocap_only.py" name="mocap_only" output="screen">
-        <param name="mocap_name" value="$(arg mocap_name)"/>
-    </node>
+    <include file="$(find svea_mocap)/launch/mocap_only.launch">
+        <arg name="x" value="$(arg x)"/>
+        <arg name="y" value="$(arg y)"/>
+        <arg name="z" value="$(arg z)"/>
+        <arg name="yaw" value="$(arg yaw)"/>
+        <arg name="roll" value="$(arg roll)"/>
+        <arg name="pitch" value="$(arg pitch)"/>
+        <arg name="frame_id" value="$(arg frame_id)"/>
+        <arg name="child_frame" value="$(arg child_frame)"/>
+        <arg name="mocap_name" value="$(arg mocap_name)"/>
+    </include>
 
     <!-- Adapter node from mocap Pose to VehicleState -->
     <node name="adapter_pose_to_vehicle_state" pkg="svea_mocap" type="adapter_pose_to_vehicle_state.py"
@@ -16,5 +35,4 @@
         <param name="velocity_topic" value="$(arg velocity_topic)"/>
         <param name="state_verbose" value="$(arg state_verbose)"/>
     </node>
-
 </launch>
