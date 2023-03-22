@@ -64,5 +64,16 @@ launch file with the `<subject name>` replaced:
 roslaunch svea_mocap localization_comparison mocap_name:=<subject name>
 ```
 
+In order to visualize data produced by the localization node running onboard the svea platform and compare them to the
+pose returned by the mocap, launch the *localization_comparison_ui.launch*. This node will take measurements from both sources
+and generates relevant plots about the RMSE related to x and y coordinates, as well as the yaw angle.
+Furthermore, a live representation of the estimated and real velocity is provided, coupled with the current trajectory.
+
+```bash
+roslaunch svea_mocap localization_comparison_ui mocap_name:=<subject name> localization_topic:=<topic name> ground_truth_topic:=<mocap topic name>
+```
+
+For a detailed description of how the node works, see the documentation embedded in the script.
+
 **Note:** By default the example supports the use of the RC remote for driving the
 vehicle around while recording the inputs from the RC remote.
