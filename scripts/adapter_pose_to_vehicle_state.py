@@ -39,6 +39,9 @@ class AdapterPoseToVehicleState:
         # Offset angle between the mocap frame (of the real world) and the map frame
         self.OFFSET_ANGLE = -math.pi/2
         self.T_MATRIX_4 = euler_matrix(0, 0, self.OFFSET_ANGLE)
+        # Create rotation matrix given the offset angle and linear misalignment between mocap and map frames
+        LINEAR_PART_MOCAP2MAP =  np.transpose(np.array([5.619764999999999, 5.870124000000001, 0]))
+        self.T_MATRIX_4[0:3,3] = LINEAR_PART_MOCAP2MAP
         
         self.vehicle_R_mocap = []
 
