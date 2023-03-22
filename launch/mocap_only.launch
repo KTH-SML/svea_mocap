@@ -8,6 +8,7 @@
     <arg name="yaw" default="1.57"/>
     <arg name="frame_id" default="mocap"/>
     <arg name="child_frame" default="map"/>
+    <arg name="mocap_name"/>
 
     <include file="$(find mocap_qualisys)/launch/qualisys.launch"/>
 
