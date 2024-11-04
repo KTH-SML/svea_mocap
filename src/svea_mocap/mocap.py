@@ -7,7 +7,9 @@ Module containing localization interface for motion capture
 from __future__ import division
 from threading import Thread, Event
 import rospy
-from geometry_msgs.msg import TwistStamped
+import tf
+import math
+from geometry_msgs.msg import TwistStamped, PoseStamped
 from nav_msgs.msg import Odometry
 from svea.states import VehicleState
 
@@ -45,6 +47,8 @@ class MotionCaptureInterface(object):
         self._y_offset = 0.0
 
         self.is_ready = False
+        self.tf_listener = tf.TransformListener()
+
         self._ready_event = Event()
         rospy.on_shutdown(self._shutdown_callback)
 
@@ -121,15 +125,37 @@ class MotionCaptureInterface(object):
         if not self._curr_vel_twist is None:
             msg = self.fix_twist(msg)
             self.state.odometry_msg = msg
-            # apply model offsets (if any)
-            self.state.x += self._x_offset
-            self.state.y += self._y_offset
+
+            # Apply the model offsets (if any)
+            x = msg.pose.pose.position.x + self._x_offset
+            y = msg.pose.pose.position.y + self._y_offset
+            yaw = self.get_yaw_from_quaternion(msg.pose.pose.orientation)
+
+            # Transform coordinates from mocap to map frame
+            x, y, yaw = self.transform_to_map_frame(x, y, yaw)
+
+            # Update the state
+            self.state.x = x
+            self.state.y = y
+            self.state.yaw = yaw
+            self.state.v = msg.twist.twist.linear.x 
+
             self.last_time = rospy.get_time()
             self._ready_event.set()
             self._ready_event.clear()
 
             for cb in self.callbacks:
                 cb(self.state)
+                
+    def get_yaw_from_quaternion(self, orientation):
+        quaternion = (
+            orientation.x,
+            orientation.y,
+            orientation.z,
+            orientation.w,
+        )
+        _, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
+        return yaw
 
     def _read_vel_msg(self, msg):
         self._curr_vel_twist = msg.twist
@@ -155,3 +181,31 @@ class MotionCaptureInterface(object):
         """
         while cb in self.callbacks:
             self.callbacks.pop(self.callbacks.index(cb))
+
+    def transform_to_map_frame(self, x, y, yaw):
+        """Transforms coordinates from mocap to map frame using tf."""
+        pose = PoseStamped()
+        pose.header.frame_id = "mocap"
+        pose.pose.position.x = x
+        pose.pose.position.y = y
+        pose.pose.orientation.z = math.sin(yaw / 2)
+        pose.pose.orientation.w = math.cos(yaw / 2)
+
+        try:
+            self.tf_listener.waitForTransform("map", "mocap", rospy.Time(0), rospy.Duration(1.0))
+            transformed_pose = self.tf_listener.transformPose("map", pose)
+
+            # Extract transformed coordinates
+            x_transformed = transformed_pose.pose.position.x
+            y_transformed = transformed_pose.pose.position.y
+            _, _, yaw_transformed = tf.transformations.euler_from_quaternion([
+                transformed_pose.pose.orientation.x,
+                transformed_pose.pose.orientation.y,
+                transformed_pose.pose.orientation.z,
+                transformed_pose.pose.orientation.w,
+            ])
+
+            return x_transformed, y_transformed, yaw_transformed
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            rospy.logwarn("Could not transform coordinates to map frame: %s", e)
+            return x, y, yaw  # Return original coordinates if transform fails
