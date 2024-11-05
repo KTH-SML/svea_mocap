@@ -124,7 +124,7 @@ class MotionCaptureInterface(object):
     def _read_odom_msg(self, msg):
         if not self._curr_vel_twist is None:
             msg = self.fix_twist(msg)
-            self.state.odometry_msg = msg
+            #self.state.odometry_msg = msg     # compromises reference transform if uncommented
 
             # Apply the model offsets (if any)
             x = msg.pose.pose.position.x + self._x_offset
@@ -134,11 +134,17 @@ class MotionCaptureInterface(object):
             # Transform coordinates from mocap to map frame
             x, y, yaw = self.transform_to_map_frame(x, y, yaw)
 
+            linear_x = msg.twist.twist.linear.x  # Velocity in the x direction of the mocap frame
+            linear_y = msg.twist.twist.linear.y  # Velocity in the y direction of the mocap frame
+            v = linear_x * math.cos(yaw+math.pi/2) + linear_y * math.sin(yaw+math.pi/2)
+
             # Update the state
             self.state.x = x
             self.state.y = y
             self.state.yaw = yaw
-            self.state.v = msg.twist.twist.linear.x 
+            self.state.v = v
+            self.state.frame_id = "map"
+            self.state.time_stamp = rospy.Time.now()
 
             self.last_time = rospy.get_time()
             self._ready_event.set()
@@ -194,7 +200,6 @@ class MotionCaptureInterface(object):
         try:
             self.tf_listener.waitForTransform("map", "mocap", rospy.Time(0), rospy.Duration(1.0))
             transformed_pose = self.tf_listener.transformPose("map", pose)
-
             # Extract transformed coordinates
             x_transformed = transformed_pose.pose.position.x
             y_transformed = transformed_pose.pose.position.y
